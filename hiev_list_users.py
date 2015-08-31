@@ -14,7 +14,8 @@ import mechanize
 import cookielib
 from BeautifulSoup import BeautifulSoup
 import html2text
-import csv
+# import unicodecsv as csv
+import unicodecsv as csv
 from datetime import datetime
 
 # Browser
@@ -50,13 +51,16 @@ soup = BeautifulSoup(html_text)
 
 # scrape the user information and write it out to datestamped csv file 
 with open('hiev_userlist_'+datetime.now().strftime('%Y%m%d')+'.csv', 'wb') as csvfile:
-    csvwriter = csv.writer(csvfile, delimiter=',',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    for entry in soup.findAll('tr', {'class': 'field_bg'}):
+    csvwriter = csv.writer(csvfile, delimiter=',', encoding='utf-8')
+    all_entries = soup.findAll('tr', {'class': 'field_bg'}) + soup.findAll('tr', {'class': 'field_nobg'})
+    for entry in all_entries:
         id = entry.find('a')['href'].split('/')[-1]
-        email = entry.find('td', {'class':'email'}, 'a').text
+        email = entry.find('td', {'class':'email'}, 'a').text.encode('utf-8')
         
         names = entry.findAll('td', {'class':'name'})
-        firstname =  names[0].text
-        surname =  names[1].text
+        firstname =  names[0].text.encode('utf-8')
+        surname =  names[1].text.encode('utf-8')
+        
         csvwriter.writerow([id, email, firstname, surname])
+        
+csvfile.close()
