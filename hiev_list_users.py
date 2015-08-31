@@ -1,5 +1,6 @@
 '''
-Python script to perform a scrape of the HIEv users list and create a readable csv file of the information
+Python script to perform a scrape of the HIEv users list and create a readable csv file of the information which
+is then uploaded into hiev
 
 Author: Gerard Devine
 Date: August 2015
@@ -14,9 +15,9 @@ import mechanize
 import cookielib
 from BeautifulSoup import BeautifulSoup
 import html2text
-# import unicodecsv as csv
 import unicodecsv as csv
 from datetime import datetime
+import requests
 
 # Browser
 br = mechanize.Browser()
@@ -50,7 +51,8 @@ html_text = br.open('https://hiev.uws.edu.au/users').read()
 soup = BeautifulSoup(html_text)
 
 # scrape the user information and write it out to datestamped csv file 
-with open('hiev_userlist_'+datetime.now().strftime('%Y%m%d')+'.csv', 'wb') as csvfile:
+csvfilename = 'HIEv_User_List_'+datetime.now().strftime('%Y%m%d')+'.csv'
+with open(csvfilename, 'wb') as csvfile:
     csvwriter = csv.writer(csvfile, delimiter=',', encoding='utf-8')
     all_entries = soup.findAll('tr', {'class': 'field_bg'}) + soup.findAll('tr', {'class': 'field_nobg'})
     for entry in all_entries:
@@ -64,3 +66,27 @@ with open('hiev_userlist_'+datetime.now().strftime('%Y%m%d')+'.csv', 'wb') as cs
         csvwriter.writerow([id, email, firstname, surname])
         
 csvfile.close()
+
+
+#
+# Now upload the file into HIEv
+#
+
+# Set global variables for upload
+api_token = os.environ['HIEV_API_KEY']
+upload_url = 'https://hiev.uws.edu.au/data_files/api_create.json?auth_token='+api_token
+filename = csvfilename
+dest_dir = os.path.dirname(__file__)
+
+# set metadata fields before upload
+filetype = "PROCESSED"
+experiment_id = 77
+start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+end_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+description = "A list of current HIEv users in CSV format, including the ID, email, first name, and surname"
+format = "CSV"
+
+# Upload the file (with metadata) to HIEv   - defalt is private access is applied
+upload_file = {'file': open(os.path.join(dest_dir, csvfilename), 'rb')}
+payload = {'type':filetype, 'experiment_id': experiment_id, 'start_time': start_time, 'end_time': end_time, 'description': description, 'format':format }
+r = requests.post(upload_url, files=upload_file, data=payload)
