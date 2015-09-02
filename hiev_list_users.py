@@ -54,6 +54,8 @@ soup = BeautifulSoup(html_text)
 csvfilename = 'HIEv_User_List_'+datetime.now().strftime('%Y%m%d')+'.csv'
 with open(csvfilename, 'wb') as csvfile:
     csvwriter = csv.writer(csvfile, delimiter=',', encoding='utf-8')
+    # Write header line
+    csvwriter.writerow(["User ID", "Email", "First Name", "Surname"])
     all_entries = soup.findAll('tr', {'class': 'field_bg'}) + soup.findAll('tr', {'class': 'field_nobg'})
     for entry in all_entries:
         id = entry.find('a')['href'].split('/')[-1]
